@@ -8,6 +8,20 @@ const keys=require('../config/keys');
 const User =mongoose.model('users');
 
 
+passport.serializeUser((user,done)=>{
+done(null,user.id);
+
+});
+
+passport.deserializeUser((id,done)=>{
+    User.findById(id)
+    .then(user=>{
+        done(null,user);
+    });
+
+});
+
+
 //creare un istanza di google strategy di oauth20 
 passport.use(
     new GoogleStrategy({
@@ -17,7 +31,20 @@ passport.use(
 },
 //informazioni che riceviamo 
 (accessToken,refreshToken,profile,done)=>{
-    new User({googleId:profile.id}).save();
+    //per cercare profileid atraverso il collezione
+    User.findOne({googleId:profile.id})
+    .then((existingUser)=>{
+        if(existingUser){
+            //abbiamo gia un record con lid del profile
+            done(null,existingUser) 
+        }else{
+            //non abbiamo un record creamo un nuovo user
+            new User({googleId:profile.id}).save()
+            .then(user=>done(null,user));
+        }
+
+    });
+   
 
 }
 )
